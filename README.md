@@ -1,6 +1,7 @@
 # AdvancedMusicBox
 
-Fork of MusicBox with 1.12–1.21.x support, Japanese/English language toggle, and jukebox fixes.
+Fork of MusicBox with 1.21.x support, Japanese/English language toggle, and jukebox fixes.
+# english
 
 ## Features
 - Play `.nbs` songs from commands, discs, jukeboxes, signs, chests, and buttons.
@@ -10,16 +11,13 @@ Fork of MusicBox with 1.12–1.21.x support, Japanese/English language toggle, a
 - Jukebox break fix: drops the inserted disc and stops playback (no ghost discs on re-place).
 - Bundled NoteBlockAPI source under `NoteBlockAPI/`.
 
-## Build
-```
-./gradlew build
-```
-Output plugin jar: `plugin/build/libs/`.
-
 ## Config
 - `config.yml` default language is `en`. Use the GUI language button or set `lang: ja` and reload.
 - Songs are unpacked to the plugin data folder on first run; add your own `.nbs` under `songs/`.
 
 ## Credits
-- Original plugin by Spliterash (inspiration / reference).
-- Fork maintained at https://github.com/zishounekonanoda/AdvancedMusicBox
+nekorin
+
+# 日本語
+AdvancedMusicBox は、Note Block Studio（NBS）形式の音楽を Minecraft 内で自然に再生できるようにするためのプラグインです。GUI 操作、カスタムディスクを使用してジュークボックスでの再生、
+看板・チェスト・ボタンによるプレイリストや再生管理など、専門的な知識がなくても扱えるよう設計されています。サーバー全体での英語・日本語切り替えにも対応しており、幅広いユーザー環境で使用できます。
