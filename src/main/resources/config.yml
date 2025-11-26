@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────────────────
+# AdvancedMusicBox Config (EN/JA bilingual comments)
+# This plugin plays Note Block Studio (.nbs) songs in-game with jukebox, GUI, signs, chests, and custom discs.
+# このプラグインは .nbs をジュークボックス/GUI/看板/チェスト/カスタムディスクで再生します。
+# Note: NoteBlockAPI is required. / NoteBlockAPI が必須です。
+# ─────────────────────────────────────────────────────────────
+
+# Enable notice about 1.14 instruments (print to console)
+# 1.14 楽器の通知を有効化する
+printNewInstrument: true
+
+# Enable bStats telemetry (anonymous usage stats)
+# bStats の匿名統計を送信する
+bStats: true
+
+economy:
+  # Enable buying discs via /musicbox shop
+  # /musicbox shop でディスク購入を有効にする
+  enable: true
+  # Price per disc
+  # ディスクの価格
+  price: 500
+
+# Speaker mode radius (shared audio range)
+# スピーカーモードの再生範囲
+speakerRadius: 10
+
+bossbar:
+  # Show bossbar with song info
+  # 曲情報をボスバーに表示する
+  enable: true
+  color: GREEN
+  style: SEGMENTED_20
+
+# Language (server-wide): en or ja
+# 言語（サーバー全体設定）: en / ja
+lang: en
+
+# Jukebox broadcast radius (who can hear discs from this plugin)
+# ジュークボックスの再生が届く範囲
+jukeboxRadius: 64
+
+# Auto-destroy (seconds) if nobody hears it; 0 disables
+# 誰も聞いていない場合に自動停止/破棄する秒数（0 で無効）
+autoDestroy: 60
+
+# Require permission musicbox.hear to listen; false means everyone hears music
+# 再生を聞くのに musicbox.hear 権限を要求するか（false なら全員が聞ける）
+hearPermissionsCheck: false
+
+# Allow octaves beyond vanilla 2-octave limit.
+# To hear correctly: install NoteblockAPI resource pack and set enable10octave: true.
+# バニラ2オクターブを超える音を許可するか。
+# 正しく再生するには NoteblockAPI リソースパックを導入し、enable10octave を true に設定してください。
+enable10octave: false

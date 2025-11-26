@@ -1,0 +1,30 @@
+plugins {
+    `java-library`
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
+    maven("https://repo.codemc.org/repository/maven-public")
+    maven("https://jitpack.io")
+}
+
+java {
+    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_1_8
+}
+dependencies {
+    compileOnly("org.spigotmc:spigot-api:1.13.2-R0.1-SNAPSHOT")
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7")
+    compileOnly("com.github.koca2000:NoteBlockAPI:1.6.1")
+
+    api("com.github.cryptomorin:XSeries:11.0.0")
+    api("io.github.bananapuncher714:nbteditor:7.19.0")
+    api("org.bstats:bstats-bukkit:3.0.2")
+
+    api(project(":nms"))
+
+    compileOnly("org.yaml:snakeyaml:2.0")
+
+}
