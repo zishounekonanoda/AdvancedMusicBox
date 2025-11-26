@@ -28,6 +28,7 @@ import ru.spliterash.musicbox.minecraft.nms.jukebox.IJukebox;
 import ru.spliterash.musicbox.gui.GUIActions;
 import ru.spliterash.musicbox.minecraft.nms.versionutils.VersionUtilsFactory;
 import ru.spliterash.musicbox.players.PlayerWrapper;
+import ru.spliterash.musicbox.song.MusicBoxSongManager;
 import ru.spliterash.musicbox.utils.FaceUtils;
 import ru.spliterash.musicbox.utils.RedstoneUtils;
 import ru.spliterash.musicbox.utils.StringUtils;
@@ -169,18 +170,60 @@ public class Handler implements Listener {
             return;
 
         Jukebox jukebox = (Jukebox) block.getState();
-        // 停止・破棄してメモリ上のプレイヤーとフォールバックストアを掃除
+        // ???????????????????????????????
         JukeboxPlayer player = AbstractBlockPlayer.findByLocation(jukebox.getLocation());
         if (player != null) {
             player.destroy();
         }
 
-        IJukebox handler = JukeboxFactory.getJukebox(jukebox);
-        ItemStack record = handler.getJukebox();
-        if (record != null && record.getType() != Material.AIR) {
-            handler.setJukebox(null); // バニラ/NMS/フォールバックいずれも確実に空にする
-            jukebox.getWorld().dropItemNaturally(jukebox.getLocation().add(0.5, 0.5, 0.5), record);
+        ItemStack record = null;
+        ItemStack bukkitRecord = jukebox.getRecord();
+        IJukebox handler = null;
+        try {
+            handler = JukeboxFactory.getJukebox(jukebox);
+            record = handler.getJukebox();
+        } catch (Throwable ignored) {
+            // ignore
         }
+
+        if (record == null || record.getType() == Material.AIR) {
+            record = bukkitRecord;
+        }
+
+        if (record == null || record.getType() == Material.AIR) {
+            return;
+        }
+
+        boolean isCustom = MusicBoxSongManager.findByItem(record).isPresent();
+
+        if (isCustom) {
+            if (handler != null) {
+                try {
+                    handler.setJukebox(null);
+                } catch (Throwable ignored) {
+                    // ignore
+                }
+            }
+            try {
+                jukebox.stopPlaying();
+            } catch (Throwable ignore) {
+                try {
+                    jukebox.setPlaying((org.bukkit.Material) null);
+                } catch (Throwable ignored) {
+                    // ignore
+                }
+            }
+            jukebox.setRecord(null);
+            jukebox.update(true);
+            jukebox.getWorld().dropItemNaturally(jukebox.getLocation().add(0.5, 0.5, 0.5), record);
+            return;
+        }
+
+        // ???: ???????????????????????
+        ItemStack toDrop = (bukkitRecord != null && bukkitRecord.getType() != Material.AIR) ? bukkitRecord : record;
+        jukebox.setRecord(null);
+        jukebox.update(true);
+        jukebox.getWorld().dropItemNaturally(jukebox.getLocation().add(0.5, 0.5, 0.5), toDrop);
     }
 
     private void processSignClick(Player player, Sign sign, Cancellable e) {

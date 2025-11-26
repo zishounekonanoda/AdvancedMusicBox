@@ -14,6 +14,7 @@ import ru.spliterash.musicbox.commands.MusicBoxExecutor;
 import ru.spliterash.musicbox.customPlayers.abstracts.AbstractBlockPlayer;
 import ru.spliterash.musicbox.customPlayers.models.MusicBoxSongPlayerModel;
 import ru.spliterash.musicbox.customPlayers.objects.SignPlayer;
+import ru.spliterash.musicbox.customPlayers.objects.jukebox.JukeboxPlayer;
 import ru.spliterash.musicbox.db.DatabaseLoader;
 import ru.spliterash.musicbox.gui.GUIActions;
 import ru.spliterash.musicbox.players.PlayerWrapper;
@@ -26,6 +27,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.stream.Collectors;
+import java.lang.reflect.Method;
 
 @Getter
 public final class MusicBox extends JavaPlugin {

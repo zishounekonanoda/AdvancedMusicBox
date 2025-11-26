@@ -3,6 +3,7 @@ package ru.spliterash.musicbox.customPlayers.objects.jukebox;
 import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Jukebox;
@@ -21,6 +22,8 @@ import ru.spliterash.musicbox.song.MusicBoxSong;
 import ru.spliterash.musicbox.song.MusicBoxSongManager;
 import ru.spliterash.musicbox.utils.BukkitUtils;
 import ru.spliterash.musicbox.utils.SignUtils;
+
+import java.util.Collection;
 
 @Getter
 public class JukeboxPlayer extends AbstractBlockPlayer {
@@ -41,29 +44,22 @@ public class JukeboxPlayer extends AbstractBlockPlayer {
         IJukebox handler = JukeboxFactory.getJukebox(jukebox);
         if (clickedItem == null) {
             // 手に何も持っていない=停止/取り出し。現在のディスクを返却し、再生を止める。
-            ItemStack current = handler.getJukebox();
-            if (current != null && current.getType() != Material.AIR) {
-                jukebox.getWorld().dropItem(jukebox.getLocation().add(0.5, 0.5, 0.5), current);
-            }
-            handler.setJukebox(null);
+            ejectAndStop(jukebox, handler, true);
             if (sp != null) {
                 // 再生を確実に止めてからプレイヤーを破棄
                 sp.getMusicBoxModel().getMusicBoxSongPlayer().getApiPlayer().destroy();
                 sp.destroy();
-            } else {
-                // プレイヤーが見つからない場合でも念のため全SongPlayerを停止
-                MusicBoxSongPlayerModel.destroyAll();
             }
             e.setCancelled(true);
             return;
         }
         ItemStack current = handler.getJukebox();
-        if (sp != null) {
-            sp.destroy();
-        }
         MusicBoxSong song = MusicBoxSongManager.findByItem(clickedItem).orElse(null);
         if (song == null) {
             return;
+        }
+        if (sp != null) {
+            sp.destroy();
         }
         if (JukeboxFactory.jukeboxAvailable()) {
             e.setCancelled(true);
@@ -98,14 +94,43 @@ public class JukeboxPlayer extends AbstractBlockPlayer {
         }
     }
 
-    /**
-     * Вызывается когда редстоун тычет
-     *
-     * @param box    Проигрыватель
-     * @param source Откуда пришёл сигнал
-     * @param power  Сила сигнала
-     */
-    public static void onRedstone(Jukebox box, Block source, int power) {
+    @Override
+    public void playTick(Player player, int tick) {
+        super.playTick(player, tick);
+        spawnBeatParticle(tick);
+    }
+
+    private void spawnBeatParticle(int tick) {
+        var noteOpt = song
+                .getLayerHashMap()
+                .values()
+                .stream()
+                .map(layer -> layer.getNote(tick))
+                .filter(java.util.Objects::nonNull)
+                .findFirst();
+        if (noteOpt.isEmpty()) {
+            return;
+        }
+        float color = (noteOpt.get().getKey() % 24) / 24.0f;
+        getLocation().getWorld().spawnParticle(
+                org.bukkit.Particle.NOTE,
+                getTargetLocation().clone().add(0.0, 1.2, 0.0),
+                1,
+                0.0,
+                0.0,
+                0.0,
+                color
+        );
+    }
+
+public static void onRedstone(Jukebox box, Block source, int power) {
+        // バニラディスクが入っている場合はバニラ挙動に任せる
+        ItemStack record = box.getRecord();
+        if (record != null && record.getType() != Material.AIR
+                && !MusicBoxSongManager.findByItem(record).isPresent()) {
+            return;
+        }
+
         if (power > 0) {
             JukeboxPlayer player = AbstractBlockPlayer.findByLocation(box.getLocation());
             if (player != null) {
@@ -136,5 +161,51 @@ public class JukeboxPlayer extends AbstractBlockPlayer {
     @Override
     protected void songEnd() {
         // NOTHING
+    }
+
+    private static void ejectAndStop(Jukebox jukebox, IJukebox handler, boolean drop) {
+        ItemStack current = null;
+        try {
+            current = handler.getJukebox();
+        } catch (Throwable ignored) {
+            current = jukebox.getRecord(); // フォールバック
+        }
+
+        if (drop && current != null && current.getType() != Material.AIR) {
+            jukebox.getWorld().dropItem(jukebox.getLocation().add(0.5, 0.5, 0.5), current);
+        }
+        try {
+            handler.setJukebox(null); // NMS / フォールバックストアを空にする
+        } catch (Throwable ignored) {
+            // ignore
+        }
+        try {
+            jukebox.stopPlaying();
+        } catch (Throwable ignored) {
+            try {
+                jukebox.setPlaying((Material) null);
+            } catch (Throwable ignored2) {
+                // ignore
+            }
+        }
+        jukebox.setRecord(null);
+        jukebox.update(true);
+    }
+
+    public void ejectRecord(boolean drop) {
+        BlockState state = getTargetLocation().getBlock().getState();
+        if (state instanceof Jukebox) {
+            IJukebox handler = JukeboxFactory.getJukebox((Jukebox) state);
+            ejectAndStop((Jukebox) state, handler, drop);
+        }
+    }
+
+    public static void ejectAllRecords(boolean drop) {
+        Collection<AbstractBlockPlayer> all = AbstractBlockPlayer.getAll();
+        for (AbstractBlockPlayer bp : all) {
+            if (bp instanceof JukeboxPlayer) {
+                ((JukeboxPlayer) bp).ejectRecord(drop);
+            }
+        }
     }
 }

@@ -1,17 +1,18 @@
-rootProject.name = 'MusicBox'
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+        mavenLocal()
+        maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
+    }
+    plugins {
+        id("io.papermc.paperweight.userdev") version "1.7.1"
+    }
+}
+
+rootProject.name = 'AdvancedMusicBox'
 
 include "nms"
 include "nms:shared"
-include "nms:versions:12"
-include "nms:versions:13-16"
-include "nms:versions:17"
-include "nms:versions:18"
-include "nms:versions:19_2"
-include "nms:versions:19_3"
-include "nms:versions:19_4"
-include "nms:versions:20_1"
-include "nms:versions:20_2"
-include "nms:versions:20_3"
-include "nms:versions:20_5"
 include "nms:versions:21"
 include "nms:versions:21_2"

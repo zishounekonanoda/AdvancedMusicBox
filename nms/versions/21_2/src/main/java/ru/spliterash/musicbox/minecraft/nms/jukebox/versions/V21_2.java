@@ -3,6 +3,7 @@ package ru.spliterash.musicbox.minecraft.nms.jukebox.versions;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Jukebox;
+import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import ru.spliterash.musicbox.minecraft.nms.jukebox.IJukebox;
@@ -13,12 +14,21 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Base64;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.util.io.BukkitObjectInputStream;
+import org.bukkit.util.io.BukkitObjectOutputStream;
 
 /**
  * 1.21.2+ 向け。NMSアクセスが壊れた場合でも、バニラ音を鳴らさずにディスクを保持するためのフォールバックを実装する。
  */
 public class V21_2 implements IJukebox {
     private static final ConcurrentMap<Location, ItemStack> FALLBACK_STORE = new ConcurrentHashMap<>();
+    private static final NamespacedKey PDC_KEY = new NamespacedKey("advancedmusicbox", "stored_record");
 
     private final Object tileEntity;
     private final Method setSongWithoutPlay;
@@ -81,14 +91,18 @@ public class V21_2 implements IJukebox {
     @Override
     public void setJukebox(ItemStack item) {
         if (useFallbackStore) {
-            // バニラ音を鳴らさないため、実ジュークボックスには挿さないでメモリに保持
+            // バニラ音は常に止める。保存のためにブロック状態にも書き込むが直後に無音化する。
             stopVanilla(bukkitJukebox);
             if (location != null) {
                 if (item == null) {
                     FALLBACK_STORE.remove(location);
+                    persistRecord(null);
                 } else {
                     FALLBACK_STORE.put(location, item.clone());
+                    persistRecord(item.clone());
                 }
+                // 設定直後にもう一度バニラ再生を止め、無音かつ保存のみを優先
+                stopVanilla(bukkitJukebox);
             }
             return;
         }
@@ -104,7 +118,10 @@ public class V21_2 implements IJukebox {
     public ItemStack getJukebox() {
         if (useFallbackStore) {
             ItemStack stored = FALLBACK_STORE.get(location);
-            return stored == null ? null : stored.clone();
+            if (stored != null)
+                return stored.clone();
+            ItemStack rec = loadPersistedRecord();
+            return rec == null || rec.getType() == org.bukkit.Material.AIR ? null : rec.clone();
         }
         try {
             Object nmsItem = getItem.invoke(tileEntity, 0);
@@ -177,5 +194,65 @@ public class V21_2 implements IJukebox {
                 jukebox.update();
             }
         }
+    }
+
+    private void persistRecord(ItemStack item) {
+        try {
+            PersistentDataContainer pdc = bukkitJukebox.getPersistentDataContainer();
+            if (item == null) {
+                pdc.remove(PDC_KEY);
+            } else {
+                pdc.set(PDC_KEY, PersistentDataType.STRING, serialize(item));
+            }
+            bukkitJukebox.update(true);
+        } catch (Exception ignored) {
+            // ignore
+        }
+    }
+
+    private ItemStack loadPersistedRecord() {
+        try {
+            PersistentDataContainer pdc = bukkitJukebox.getPersistentDataContainer();
+            String data = pdc.get(PDC_KEY, PersistentDataType.STRING);
+            if (data == null)
+                return null;
+            return deserialize(data);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String serialize(ItemStack stack) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (BukkitObjectOutputStream oos = new BukkitObjectOutputStream(baos)) {
+            oos.writeObject(stack);
+        }
+        return Base64.getEncoder().encodeToString(baos.toByteArray());
+    }
+
+    private ItemStack deserialize(String data) throws IOException, ClassNotFoundException {
+        byte[] bytes = Base64.getDecoder().decode(data);
+        try (BukkitObjectInputStream ois = new BukkitObjectInputStream(new ByteArrayInputStream(bytes))) {
+            Object obj = ois.readObject();
+            return (ItemStack) obj;
+        }
+    }
+
+    /**
+     * バニラ/NMS経路が壊れてフォールバックストアに残っているディスクを全て排出する
+     */
+    public static void ejectFallbackStore() {
+        for (ConcurrentMap.Entry<Location, ItemStack> entry : FALLBACK_STORE.entrySet()) {
+            Location loc = entry.getKey();
+            ItemStack item = entry.getValue();
+            if (loc != null && item != null && item.getType() != null && item.getType() != org.bukkit.Material.AIR) {
+                try {
+                    loc.getWorld().dropItem(loc.clone().add(0.5, 0.5, 0.5), item.clone());
+                } catch (Exception ignored) {
+                    // ignore drop failure
+                }
+            }
+        }
+        FALLBACK_STORE.clear();
     }
 }

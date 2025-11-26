@@ -1,0 +1,39 @@
+name: AdvancedMusicBox
+main: ru.spliterash.musicbox.MusicBox
+version: 1.1.0
+api-version: 1.13
+authors:
+  - Nekorin
+depend:
+  - NoteBlockAPI
+softdepend:
+  - Vault
+
+commands:
+  musicbox:
+    description: Open MusicBox GUI and subcommands
+    usage: /musicbox
+    permission: musicbox.use
+
+permissions:
+  musicbox.use:
+    description: Allow using /musicbox GUI and basic play features
+    default: true
+  musicbox.admin:
+    description: Admin actions (reload, give others, manage playlists)
+    default: op
+  musicbox.give:
+    description: Use /musicbox give to obtain discs
+    default: op
+  musicbox.give_single:
+    description: Use /musicbox give_single
+    default: op
+  musicbox.shop:
+    description: Use /musicbox shop
+    default: op
+  musicbox.speaker:
+    description: Toggle speaker mode
+    default: op
+  musicbox.hear:
+    description: Hear music when hearPermissionsCheck is enabled
+    default: true

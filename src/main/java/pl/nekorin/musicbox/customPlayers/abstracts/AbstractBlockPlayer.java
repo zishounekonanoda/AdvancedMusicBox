@@ -37,6 +37,8 @@ public abstract class AbstractBlockPlayer extends PositionSongPlayer implements 
             oldBlock.destroy();
         this.musicBoxModel = new MusicBoxSongPlayerModel(this, list, this::runNextSong);
         this.rangePlayerModel = new RangePlayerModel(musicBoxModel);
+        // 最初のノートが聞こえるよう、再生開始前に対象プレイヤーを反映しておく
+        this.rangePlayerModel.tick();
         musicBoxModel.runPlayer();
         new BukkitRunnable() {
             @Override

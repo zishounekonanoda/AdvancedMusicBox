@@ -1,5 +1,19 @@
 subprojects {
+    apply plugin: "java-library"
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/groups/public/" }
+        maven { url "https://repo.md-5.net/content/groups/public/" }
+        maven { url "https://repo.md-5.net/content/repositories/snapshots/" }
+    }
+
     dependencies {
         compileOnly project(":nms:shared")
     }
+
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
